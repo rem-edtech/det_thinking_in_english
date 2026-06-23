@@ -1,0 +1,343 @@
+
+<style>
+  .trainer { padding: 1.5rem 0; font-family: var(--font-sans); }
+  .phase-label { font-size: 12px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .word-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; margin-bottom: 1rem; position: relative; }
+  .target-word { font-size: 36px; font-weight: 500; color: #A32D2D; letter-spacing: 2px; margin-bottom: 1.25rem; }
+  .taboo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .taboo-pill { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 8px 12px; font-size: 14px; color: var(--color-text-secondary); text-align: center; font-weight: 500; }
+  .timer-ring-wrap { display: flex; justify-content: center; margin-bottom: 1rem; }
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.75rem; text-align: center; }
+  .stat-val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .stat-lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .btn-row { display: flex; gap: 10px; margin-bottom: 1rem; }
+  .btn-row button { flex: 1; }
+  .btn-primary { background: #534AB7 !important; color: white !important; border: none !important; font-weight: 500; padding: 12px 0; border-radius: var(--border-radius-md); cursor: pointer; font-size: 15px; }
+  .btn-primary:hover { background: #3C3489 !important; }
+  .btn-secondary { background: var(--color-background-secondary) !important; color: var(--color-text-primary) !important; border: 0.5px solid var(--color-border-secondary) !important; font-weight: 500; padding: 12px 0; border-radius: var(--border-radius-md); cursor: pointer; font-size: 15px; }
+  .btn-secondary:disabled { opacity: 0.4; cursor: default; }
+  .pivot-box { border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; background: #3C3489; position: relative; overflow: hidden; }
+  .pivot-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #AFA9EC; margin-bottom: 6px; }
+  .pivot-text { font-size: 19px; font-weight: 500; color: #ffffff; line-height: 1.4; }
+  .progress-bar { background: var(--color-background-secondary); border-radius: 4px; height: 4px; margin-bottom: 1rem; }
+  .progress-fill { background: #534AB7; height: 4px; border-radius: 4px; transition: width 0.4s; }
+  .mode-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+  .mode-tab { flex: 1; padding: 7px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; text-align: center; }
+  .mode-tab.active { background: #EEEDFE; border-color: #534AB7; color: #3C3489; font-weight: 500; }
+  .result-banner { border-radius: var(--border-radius-md); padding: 1rem; text-align: center; margin-bottom: 1rem; }
+  .result-banner.success { background: #EAF3DE; border: 0.5px solid #97C459; }
+  .result-banner.fail { background: #FCEBEB; border: 0.5px solid #F09595; }
+  .result-banner .result-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .result-banner.success .result-title { color: #27500A; }
+  .result-banner.fail .result-title { color: #791F1F; }
+  .result-banner .result-sub { font-size: 13px; }
+  .result-banner.success .result-sub { color: #3B6D11; }
+  .result-banner.fail .result-sub { color: #A32D2D; }
+  .starter-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .starter-list li { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 8px 12px; font-size: 13px; color: var(--color-text-secondary); }
+  .starter-list li strong { color: var(--color-text-primary); }
+  .tip-box { background: var(--color-background-secondary); border-left: 3px solid #534AB7; border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0; padding: 0.75rem 1rem; font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 1rem; }
+  .tip-box strong { color: var(--color-text-primary); }
+  .deck-badge { position: absolute; top: 1rem; right: 1rem; background: #EEEDFE; color: #3C3489; font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  #ready-screen { }
+  #play-screen { display: none; }
+  #result-screen { display: none; }
+  #summary-screen { display: none; }
+</style>
+
+<div class="trainer">
+  <h2 class="sr-only">DET Fluency Trainer — Don't Say the Word!</h2>
+
+  <div id="ready-screen">
+    <div class="phase-label">DET fluency trainer</div>
+    <div style="font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.25rem;">Don't say the word!</div>
+    <div style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.25rem; line-height: 1.6;">
+      You'll see a secret word. Describe it out loud — in English only — without using the word itself or any forbidden words below it. The goal: think in English, not through Japanese.
+    </div>
+
+    <div class="mode-tabs" id="mode-tabs">
+      <div class="mode-tab active" data-mode="45">45 s <span style="font-size:11px; display:block; color:inherit; opacity:0.75">standard</span></div>
+      <div class="mode-tab" data-mode="30">30 s <span style="font-size:11px; display:block; color:inherit; opacity:0.75">challenge</span></div>
+      <div class="mode-tab" data-mode="60">60 s <span style="font-size:11px; display:block; color:inherit; opacity:0.75">extended</span></div>
+    </div>
+
+    <div class="tip-box" style="margin-bottom:1rem">
+      <strong>Thinking in English:</strong> When you feel stuck, don't pause and translate — pivot immediately with a filler like <em>"What I mean is..."</em> or <em>"Another way to put it..."</em> to keep your speech flowing.
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <div class="phase-label" style="margin-bottom:0.5rem">sentence starters to practise</div>
+      <ul class="starter-list">
+        <li><strong>"It's something that..."</strong> — describe by function</li>
+        <li><strong>"You use this when you need to..."</strong> — describe by context</li>
+        <li><strong>"It's the kind of thing you find in..."</strong> — describe by location</li>
+        <li><strong>"Imagine a situation where..."</strong> — describe by scenario</li>
+      </ul>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="startGame()"><i class="ti ti-player-play" aria-hidden="true"></i> Start practice</button>
+    </div>
+  </div>
+
+  <div id="play-screen">
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-val" id="score-val">0</div><div class="stat-lbl">correct</div></div>
+      <div class="stat-card"><div class="stat-val" id="skip-val">0</div><div class="stat-lbl">skipped</div></div>
+      <div class="stat-card"><div class="stat-val" id="card-val">1/10</div><div class="stat-lbl">card</div></div>
+    </div>
+
+    <div class="timer-ring-wrap">
+      <svg id="timer-svg" viewBox="0 0 100 100" width="90" height="90" role="img" aria-label="Timer">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-border-tertiary)" stroke-width="6"/>
+        <circle id="timer-ring" cx="50" cy="50" r="42" fill="none" stroke="#534AB7" stroke-width="6"
+          stroke-dasharray="263.9" stroke-dashoffset="0" stroke-linecap="round"
+          transform="rotate(-90 50 50)" style="transition: stroke-dashoffset 1s linear, stroke 0.3s;"/>
+        <text x="50" y="55" text-anchor="middle" font-size="22" font-weight="500" fill="var(--color-text-primary)" id="timer-text">45</text>
+      </svg>
+    </div>
+
+    <div class="word-card">
+      <span class="deck-badge" id="deck-badge">1 / 10</span>
+      <div class="target-word" id="target-word">KEYBOARD</div>
+      <div class="phase-label">forbidden words</div>
+      <div class="taboo-grid" id="taboo-grid"></div>
+    </div>
+
+    <div class="pivot-box">
+      <div class="pivot-label"><i class="ti ti-bolt" aria-hidden="true"></i> Pivot now</div>
+      <div class="pivot-text" id="tip-text">Keep talking — describe where you'd find it.</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="skip-btn" onclick="skipCard()"><i class="ti ti-arrow-right" aria-hidden="true"></i> Skip</button>
+      <button class="btn-primary" id="got-btn" onclick="markCorrect()"><i class="ti ti-check" aria-hidden="true"></i> Got it!</button>
+    </div>
+  </div>
+
+  <div id="result-screen">
+    <div class="result-banner" id="result-banner">
+      <div class="result-title" id="result-title"></div>
+      <div class="result-sub" id="result-sub"></div>
+    </div>
+    <div class="word-card" style="margin-bottom:1rem;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;">the word was</div>
+      <div class="target-word" id="result-word" style="margin-bottom:0.75rem;"></div>
+      <div class="phase-label">example description</div>
+      <div style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;" id="example-desc"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="nextCard()">Next word <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <div id="summary-screen">
+    <div style="font-size:22px; font-weight:500; color:var(--color-text-primary); margin-bottom:0.25rem;">Session complete!</div>
+    <div style="font-size:14px; color:var(--color-text-secondary); margin-bottom:1.25rem;">Here's how you did:</div>
+    <div class="stat-row" style="margin-bottom:1.25rem;">
+      <div class="stat-card"><div class="stat-val" id="final-correct"></div><div class="stat-lbl">correct</div></div>
+      <div class="stat-card"><div class="stat-val" id="final-skip"></div><div class="stat-lbl">skipped</div></div>
+      <div class="stat-card"><div class="stat-val" id="final-pct"></div><div class="stat-lbl">accuracy</div></div>
+    </div>
+    <div class="tip-box" id="summary-tip" style="margin-bottom:1.25rem;"></div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="restartGame()"><i class="ti ti-refresh" aria-hidden="true"></i> Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const deck = [
+  { word: "Keyboard", taboo: ["type", "computer", "keys", "buttons"], example: "It's a flat device with rows of individual squares on it that you press one at a time to enter letters and numbers into a machine." },
+  { word: "Screwdriver", taboo: ["tool", "turn", "screw", "hand"], example: "It's a long, narrow object — one end fits into a slot on a small metal fastener, and you rotate the whole thing to tighten or loosen it." },
+  { word: "Elevator", taboo: ["lift", "building", "stairs", "floor"], example: "It's an enclosed platform inside a shaft that carries people vertically between levels — you press a number to choose where you want to go." },
+  { word: "Passport", taboo: ["travel", "country", "airport", "document"], example: "It's a small official booklet issued by a government that proves your identity and nationality and lets you cross international borders." },
+  { word: "Subway", taboo: ["train", "underground", "station", "commute"], example: "It's an urban transit system that runs electrically powered vehicles through tunnels beneath a city to move large numbers of people quickly." },
+  { word: "Wallet", taboo: ["money", "cash", "cards", "pocket"], example: "It's a small flat folding case made of leather or similar material that you carry your personal payment items and identification in." },
+  { word: "Microwave", taboo: ["heat", "kitchen", "food", "cook"], example: "It's a countertop appliance that uses invisible radiation to excite the molecules inside something, warming it from the inside out in seconds." },
+  { word: "Gym", taboo: ["exercise", "workout", "weights", "fit"], example: "It's a facility you pay a monthly fee to access where they provide equipment and floor space dedicated to physical improvement and conditioning." },
+  { word: "Calendar", taboo: ["date", "month", "year", "days"], example: "It's a system — printed or digital — that organises all the segments of time humans use, showing which events fall on which positions in a cycle." },
+  { word: "Refrigerator", taboo: ["cold", "food", "freeze", "store"], example: "It's a large household appliance that uses a cooling system to keep its interior at a low temperature so that perishable items last longer." },
+  { word: "Umbrella", taboo: ["rain", "wet", "open", "carry"], example: "It's a portable canopy on a stick that you hold above your head to shield yourself from falling precipitation." },
+  { word: "Alarm clock", taboo: ["wake", "sleep", "ring", "morning"], example: "It's a device you set to make a loud sound at a specific moment in the future to stop you from continuing to rest beyond a certain point." },
+  { word: "Library", taboo: ["book", "read", "borrow", "quiet"], example: "It's a public institution where you can access a large collection of written materials for free, usually by registering as a member." },
+  { word: "Deadline", taboo: ["time", "due", "finish", "date"], example: "It's the latest point by which a piece of work must be completed — if you miss it, there are usually negative consequences for you professionally or academically." },
+  { word: "Budget", taboo: ["money", "spend", "cost", "plan"], example: "It's a calculation or document that sets limits on how much can be used for different purposes over a given period." },
+  { word: "Commute", taboo: ["work", "travel", "train", "drive"], example: "It's the regular journey a person makes between the place they live and the place they are required to be each day." },
+  { word: "Habit", taboo: ["do", "routine", "always", "repeat"], example: "It's a behaviour that has become so automatic through repetition that a person performs it without consciously deciding to." },
+  { word: "Opinion", taboo: ["think", "believe", "feel", "idea"], example: "It's a personal view or judgement about something that is not necessarily based on fact and may differ from what others conclude." },
+  { word: "Shadow", taboo: ["dark", "light", "sun", "block"], example: "It's the dark shape that appears on a surface when an object stands between it and a source of illumination." },
+  { word: "Rumour", taboo: ["hear", "say", "news", "true"], example: "It's a piece of information that circulates among people without being officially confirmed, and which may or may not be accurate." },
+  { word: "Debt", taboo: ["owe", "borrow", "pay", "loan"], example: "It's the situation of having an obligation to return something — usually money — that was provided to you by another person or institution." },
+  { word: "Crowd", taboo: ["people", "many", "group", "together"], example: "It's a large number of individuals gathered in the same place at the same time, often creating a sense of density or congestion." },
+  { word: "Shortcut", taboo: ["fast", "quick", "way", "path"], example: "It's an alternative method or route that gets you to the same outcome with less time or effort than the standard approach." },
+  { word: "Coincidence", taboo: ["happen", "same", "chance", "time"], example: "It's when two or more things occur together in a way that seems connected or meaningful, but is actually the result of random circumstances." },
+  { word: "Prejudice", taboo: ["judge", "bias", "unfair", "race"], example: "It's a negative attitude or assumption about a person that is formed before actually knowing them, usually based on which group they belong to." },
+  { word: "Conscience", taboo: ["right", "wrong", "feel", "guilt"], example: "It's the inner sense that tells a person whether their actions or intentions are morally acceptable or not." },
+  { word: "Fluency", taboo: ["speak", "English", "language", "smooth"], example: "It's the ability to express yourself in a way that flows naturally and without hesitation, particularly when communicating in a non-native context." },
+  { word: "Evidence", taboo: ["proof", "show", "fact", "true"], example: "It's information or material that supports or contradicts a claim, used to help determine whether something is accurate or not." },
+  { word: "Privacy", taboo: ["secret", "alone", "personal", "data"], example: "It's the condition of being free from unwanted observation or intrusion, where a person has control over information about themselves." },
+  { word: "Patience", taboo: ["wait", "calm", "angry", "time"], example: "It's the capacity to remain composed and accepting when facing delay, difficulty, or a situation that is not changing as quickly as one would like." },
+];
+
+const pivotTips = [
+  "Keep talking — describe where you'd find it.",
+  "Who uses it? Describe that person's situation.",
+  "What problem does it solve?",
+  "What does it look like? Describe the shape or size.",
+  "What would happen if this didn't exist?",
+  "Describe the last time you encountered something like this.",
+  "Give an example of a situation where this really matters.",
+  "How would you explain this to a young child?",
+  "What kind of person needs this most — and why?",
+  "Is this a good thing, a bad thing, or both? Say why.",
+  "What's the opposite of this? Describe that instead.",
+  "Can you think of a story or news event that involves this?",
+];
+
+let state = {
+  mode: 45, shuffled: [], idx: 0, score: 0, skips: 0,
+  timer: null, timeLeft: 45, tipIdx: 0
+};
+
+document.querySelectorAll('.mode-tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.mode-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    state.mode = parseInt(t.dataset.mode);
+  };
+});
+
+function shuffle(arr) {
+  const a = [...arr]; for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
+}
+
+function startGame() {
+  state.shuffled = shuffle(deck).slice(0, 10);
+  state.idx = 0; state.score = 0; state.skips = 0;
+  document.getElementById('ready-screen').style.display = 'none';
+  document.getElementById('play-screen').style.display = 'block';
+  loadCard();
+}
+
+function loadCard() {
+  clearInterval(state.timer);
+  const card = state.shuffled[state.idx];
+  document.getElementById('target-word').textContent = card.word.toUpperCase();
+  document.getElementById('deck-badge').textContent = (state.idx+1) + ' / ' + state.shuffled.length;
+  document.getElementById('card-val').textContent = (state.idx+1) + '/10';
+  document.getElementById('progress-fill').style.width = (state.idx / state.shuffled.length * 100) + '%';
+  const grid = document.getElementById('taboo-grid');
+  grid.innerHTML = '';
+  card.taboo.forEach(w => { const d = document.createElement('div'); d.className='taboo-pill'; d.textContent=w; grid.appendChild(d); });
+  state.timeLeft = state.mode;
+  updateTimerDisplay();
+  updateScoreboard();
+  state.tipIdx = Math.floor(Math.random() * pivotTips.length);
+  document.getElementById('tip-text').textContent = pivotTips[state.tipIdx];
+  document.getElementById('skip-btn').disabled = false;
+  document.getElementById('got-btn').disabled = false;
+  startTimer();
+}
+
+function updateTimerDisplay() {
+  const frac = state.timeLeft / state.mode;
+  const circ = 263.9;
+  document.getElementById('timer-text').textContent = state.timeLeft;
+  document.getElementById('timer-ring').style.strokeDashoffset = circ * (1 - frac);
+  const ring = document.getElementById('timer-ring');
+  if (frac > 0.5) ring.style.stroke = '#534AB7';
+  else if (frac > 0.25) ring.style.stroke = '#BA7517';
+  else ring.style.stroke = '#A32D2D';
+}
+
+function startTimer() {
+  clearInterval(state.timer);
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+    if (state.timeLeft % 10 === 0 && state.timeLeft > 0) {
+      state.tipIdx = (state.tipIdx + 1) % pivotTips.length;
+      document.getElementById('tip-text').textContent = pivotTips[state.tipIdx];
+    }
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      showResult('timeout');
+    }
+  }, 1000);
+}
+
+function markCorrect() {
+  clearInterval(state.timer);
+  state.score++;
+  showResult('correct');
+}
+
+function skipCard() {
+  clearInterval(state.timer);
+  state.skips++;
+  showResult('skip');
+}
+
+function showResult(type) {
+  document.getElementById('skip-btn').disabled = true;
+  document.getElementById('got-btn').disabled = true;
+  document.getElementById('play-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+  const card = state.shuffled[state.idx];
+  document.getElementById('result-word').textContent = card.word.toUpperCase();
+  document.getElementById('example-desc').textContent = card.example;
+  const banner = document.getElementById('result-banner');
+  const title = document.getElementById('result-title');
+  const sub = document.getElementById('result-sub');
+  if (type === 'correct') {
+    banner.className = 'result-banner success';
+    title.textContent = 'Nice work!';
+    sub.textContent = 'You described it without translating. Keep that momentum going.';
+  } else if (type === 'skip') {
+    banner.className = 'result-banner fail';
+    title.textContent = 'Skipped';
+    sub.textContent = "That's okay — read the example below and try a similar approach next time.";
+  } else {
+    banner.className = 'result-banner fail';
+    title.textContent = "Time's up!";
+    sub.textContent = 'Read the example below to see one way to describe it fluently.';
+  }
+}
+
+function nextCard() {
+  document.getElementById('result-screen').style.display = 'none';
+  state.idx++;
+  if (state.idx >= state.shuffled.length) {
+    showSummary();
+  } else {
+    document.getElementById('play-screen').style.display = 'block';
+    loadCard();
+  }
+}
+
+function showSummary() {
+  document.getElementById('summary-screen').style.display = 'block';
+  const pct = Math.round(state.score / state.shuffled.length * 100);
+  document.getElementById('final-correct').textContent = state.score;
+  document.getElementById('final-skip').textContent = state.skips;
+  document.getElementById('final-pct').textContent = pct + '%';
+  let tip = '';
+  if (pct >= 80) tip = '<strong>Excellent session!</strong> Your descriptions stayed in English and kept flowing. Try the 30-second mode to push your speed.';
+  else if (pct >= 50) tip = '<strong>Good effort!</strong> When you felt stuck, try pivoting to function or context rather than pausing to translate.';
+  else tip = '<strong>Keep practising!</strong> Re-read the example descriptions and notice the sentence structure — then try those same frames next session.';
+  document.getElementById('summary-tip').innerHTML = tip;
+}
+
+function updateScoreboard() {
+  document.getElementById('score-val').textContent = state.score;
+  document.getElementById('skip-val').textContent = state.skips;
+}
+
+function restartGame() {
+  document.getElementById('summary-screen').style.display = 'none';
+  document.getElementById('ready-screen').style.display = 'block';
+}
+</script>
